@@ -1,4 +1,6 @@
 import abc
+from pathlib import Path
+from typing import List, Iterable
 
 
 class BaseLoader:
@@ -45,11 +47,14 @@ class TermLoader(BaseLoader):
         return text
 
     def iter_term(self, skip_last_token: bool = True):
-        for line in self._iter_line_list():
-            term_in_line = line.split()
-            term_in_line = term_in_line[:-1] if skip_last_token else term_in_line
-            for term in term_in_line:
-                yield term
+        try:
+            for line in self._iter_line_list():
+                term_in_line = line.split()
+                term_in_line = term_in_line[:-1] if skip_last_token else term_in_line
+                for term in term_in_line:
+                    yield term
+        except:
+            yield ''
 
     def set_start_line(self, start_line: int):
         self.start_line = start_line
@@ -58,6 +63,26 @@ class TermLoader(BaseLoader):
         with open(str(self.real_file_path), 'r') as fp:
             line_list = fp.readlines()
 
+        if len(line_list) < self.start_line + 1:
+            return ''
+
         wanted_list = line_list[self.start_line:]
         for line in wanted_list:
             yield line.strip()
+
+
+class TermClassifier:
+    def __init__(self, term_list: Iterable):
+        self.term_list = term_list
+        self.term_frequency_dict = {}  # term: frequency
+        self.term_name_space = set()  # kind of terms
+        self.length = 0  # length of all terms
+
+    def sort(self):
+        for term in self.term_list:
+            self.term_frequency_dict.setdefault(term, 0)
+            self.term_frequency_dict[term] += 1
+            self.term_name_space.add(term)
+            self.length += 1
+
+
