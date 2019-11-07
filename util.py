@@ -1,14 +1,10 @@
-import abc
+from pathlib import Path
 
 
 class BaseLoader:
     def __init__(self, path: Path, file_name: str):
         self.real_file_path = path / file_name
         self.start_line = 0
-
-    @abc.abstractmethod
-    def read(self):
-        pass
 
 
 class ListLoader(BaseLoader):
@@ -61,3 +57,21 @@ class TermLoader(BaseLoader):
         wanted_list = line_list[self.start_line:]
         for line in wanted_list:
             yield line.strip()
+
+
+class BGLMLoader(BaseLoader):
+    def __init__(self, path: Path, file_name: str):
+        super(BGLMLoader, self).__init__(path, file_name)
+        self._bglm_list = []
+
+    def parse(self):
+        with open(str(self.real_file_path), 'r') as fp:
+            line_list = fp.readlines()
+
+        for line in line_list:
+            index, bglm = line.split()
+            self._bglm_list.append([float(bglm)])
+
+    def get_bglm_list(self):
+        return self._bglm_list
+
