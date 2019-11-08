@@ -7,14 +7,13 @@ from util import BGLMLoader, ListLoader, TermLoader
 DATA = Path(__file__).parent / 'Data'
 
 
-a = 0.1
-b = 0.5
+a = 0.36
+b = 0.54
 BIG_NATIVE = float(-2**1023)
 NATIVE_INF = -float('inf')
 
 doc_term_freq_matrix = np.load('doc_term_freq_matrix.npy')  # w x d
-doc_len_array = np.sum(doc_term_freq_matrix, axis=0)  # 1 x d
-p_w_d = doc_term_freq_matrix / doc_len_array  # w x d
+p_w_d = doc_term_freq_matrix / np.sum(doc_term_freq_matrix, axis=0)  # w x d
 
 random_matrix = np.load('random_matrix.npz')
 p_w_given_T = random_matrix['p_w_given_T']
