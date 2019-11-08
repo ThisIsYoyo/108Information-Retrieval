@@ -5,7 +5,7 @@ import numpy
 from util import ListLoader, TermLoader
 
 DATA = Path(__file__).parent / 'Data'
-T = 15  # topic amount
+T = 20  # topic amount
 
 
 if __name__ == '__main__':
@@ -31,7 +31,7 @@ if __name__ == '__main__':
         for sorted_term in sorted_term_list:
             fp.write(f'{sorted_term}\n')
 
-    doc_term_freq_matrix = numpy.zeros((len(sorted_term_list), len(doc_list)))
+    doc_term_freq_matrix = numpy.zeros((len(sorted_term_list), len(doc_list)), dtype=numpy.int)
     for doc_index, doc in enumerate(doc_list):
         for term, freq in doc_information[doc].items():
             term_index = sorted_term_list.index(int(term))
@@ -41,8 +41,8 @@ if __name__ == '__main__':
     doc_list_len = len(doc_list)  # 2265
     w_given_T = numpy.random.rand(term_list_len, T)
     T_given_d = numpy.random.rand(T, doc_list_len)
-    w_given_T_col_sum = numpy.sum(w_given_T, axis=0)
-    T_given_d_col_sum = numpy.sum(T_given_d, axis=0)
+    w_given_T_col_sum = numpy.sum(w_given_T, axis=0, dtype=numpy.float)
+    T_given_d_col_sum = numpy.sum(T_given_d, axis=0, dtype=numpy.float)
     p_w_given_T = w_given_T / w_given_T_col_sum
     p_T_given_d = T_given_d / T_given_d_col_sum
 
