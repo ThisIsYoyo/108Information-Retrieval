@@ -82,4 +82,3 @@ if __name__ == '__main__':
         for doc_sim, doc in query_search_result:
             result.write(f'{doc} ')
         result.write('\n')
-

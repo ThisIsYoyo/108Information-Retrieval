@@ -5,12 +5,10 @@ import numpy as np
 from util import BGLMLoader, ListLoader, TermLoader
 
 DATA = Path(__file__).parent / 'Data'
+STATS = Path(__file__).parent / 'Stats_Data'
 
-
-a = 0.1
-b = 0.45
-# BIG_NATIVE = float(-2**1023)
-# NATIVE_INF = -float('inf')
+a = 0.33
+b = 0.34
 N = 2265
 
 doc_term_freq_matrix = np.load('doc_term_freq_matrix.npy')  # w x d
@@ -18,7 +16,7 @@ p_w_d = doc_term_freq_matrix / np.sum(doc_term_freq_matrix, axis=0)  # w x d
 p_w_d = np.nan_to_num(p_w_d)
 
 p_w_given_T = np.load('p_w_given_T.npy')
-p_T_given_d = np.load('fold_in_p_t_d.npy')
+p_T_given_d = np.load('p_T_given_d.npy')
 plsa_p_w_d = p_w_given_T.dot(p_T_given_d)  # w x d
 
 bglm_loader = BGLMLoader(path=DATA, file_name='BGLM.txt')
@@ -29,16 +27,15 @@ if __name__ == '__main__':
     query_list_loader = ListLoader(path=DATA, file_name='query_list.txt')
     query_list = query_list_loader.get_list()
 
-    term_list = list(np.load('coll_term_list.npy'))
+    term_list_loader = ListLoader(path=STATS, file_name='doc_term_list.txt')
+    term_list = term_list_loader.get_list()
 
     doc_list_loader = ListLoader(path=DATA, file_name='doc_list.txt')
     doc_list = doc_list_loader.get_list()
 
-    submission = open('submission.csv', 'w')
-    submission.write('Query,RetrievedDocuments')
+    plsa_ranking_top_15 = open('plsa_ranking_top_15.txt', 'w')
 
     for query in query_list:
-        submission.write(f'\n{query},')
         term_loader = TermLoader(path=DATA / 'Query', file_name=query)
 
         doc_ranking = np.zeros(N)
@@ -65,7 +62,9 @@ if __name__ == '__main__':
         ranking_with_doc = [(doc_ranking[i], doc_list[i]) for i in range(2265)]
         ranking_with_doc = sorted(ranking_with_doc, reverse=True)
 
-        for ranking_doc in ranking_with_doc:
-            submission.write(f'{ranking_doc[1]} ')
+        for ranking_doc in ranking_with_doc[:15]:
+            plsa_ranking_top_15.write(f'{ranking_doc[1]} ')
+        plsa_ranking_top_15.write('\n')
 
-    submission.close()
+    plsa_ranking_top_15.close()
+

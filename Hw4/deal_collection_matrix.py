@@ -5,21 +5,34 @@ import numpy as np
 from sklearn.feature_extraction.text import CountVectorizer
 
 # Custom Var
+from util import ListLoader, TermLoader
+
 T = 128
 LOOP = 2
 
 # Fixed var
 COLLECTION_PATH = Path(__file__).parent / 'Data' / 'Collection.txt'
+DATA = Path(__file__).parent / 'Data'
+STATS = Path(__file__).parent / 'Stats_Data'
 
 
 if __name__ == '__main__':
     start_time = time.time()
 
+    doc_list_loader = ListLoader(path=DATA, file_name='doc_list.txt')
+    doc_list = doc_list_loader.get_list()
+
+    doc_term_join_list = []
+    for doc in doc_list:
+        term_list_loader = TermLoader(path=DATA / 'Document', file_name=doc)
+        term_list_loader.set_start_line(3)
+        term_list = list(term_list_loader.iter_term())
+
+        doc_term_join_list.append(' '.join(term_list))
+
     # deal collection
-    with open(COLLECTION_PATH, 'r') as fp:
-        collection_line_list = fp.readlines()
     cs = CountVectorizer(dtype=np.int)
-    doc_term_freq_matrix = cs.fit_transform(collection_line_list)
+    doc_term_freq_matrix = cs.fit_transform(doc_term_join_list)
     doc_term_freq_matrix = np.transpose(doc_term_freq_matrix)
 
     term_len, doc_len = doc_term_freq_matrix.shape
