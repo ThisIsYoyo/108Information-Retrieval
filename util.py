@@ -1,9 +1,16 @@
 from pathlib import Path
+from typing import Union, List
+
+import numpy as np
+from sklearn.feature_extraction.text import CountVectorizer
 
 
 class BaseLoader:
-    def __init__(self, path: Path, file_name: str):
-        self.real_file_path = path / file_name
+    def __init__(self, path: Path = None, file_name: str = None, file_path: Path = None):
+        if file_path:
+            self.real_file_path = file_path
+        else:
+            self.real_file_path = path / file_name
         self.start_line = 0
 
 
@@ -74,4 +81,66 @@ class BGLMLoader(BaseLoader):
 
     def get_bglm_list(self):
         return self._bglm_list
+
+
+class FreqMatrixTransformer:
+
+    def __init__(self):
+        self.x_axis = []
+        self.y_axis = []
+        self._doc_content_start_line = 0
+        self.freq_matrix = None
+
+    def set_x_axis(self, x_list: List = None, x_flie: Path = None):
+        if x_flie:
+            x_axis_loader = ListLoader(file_path=x_flie)
+            self.x_axis = x_axis_loader.get_list()
+        else:
+            self.x_axis = x_list
+
+    def set_y_axis(self, y_list: List = None, y_flie: Path = None):
+        if y_flie:
+            y_axis_loader = ListLoader(file_path=y_flie)
+            self.y_axis = y_axis_loader.get_list()
+        else:
+            self.y_axis = y_list
+
+    def set_doc_content_start_line(self, start_line):
+        self._doc_content_start_line = start_line
+
+    def vectorize(self, folder: Path):
+        assert self.x_axis != []
+        x_len = len(self.x_axis)
+
+        if self.y_axis:
+            y_len = len(self.y_axis)
+
+            self.freq_matrix = np.zeros((y_len, x_len))
+            for x, x_doc in enumerate(self.x_axis):
+                x_term_loader = TermLoader(path=folder, file_name=x_doc)
+                x_term_loader.set_start_line(self._doc_content_start_line)
+
+                for x_term in x_term_loader.iter_term():
+                    if x_term not in self.y_axis:
+                        continue
+
+                    y = self.y_axis.index(x_term)
+                    self.freq_matrix[y, x] += 1
+
+        else:
+            doc_content_list = []
+            for x_doc in self.x_axis:
+                x_term_loader = TermLoader(path=folder, file_name=x_doc)
+                x_term_loader.set_start_line(self._doc_content_start_line)
+
+                x_content = ' '.join(list(x_term_loader.iter_term()))
+                doc_content_list.append(x_content)
+
+            cv = CountVectorizer()
+            sparse_doc_matrix = cv.fit_transform(doc_content_list)
+            self.freq_matrix = np.transpose(sparse_doc_matrix.toarray())
+            self.y_axis = cv.get_feature_names()
+
+        return self.freq_matrix
+
 

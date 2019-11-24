@@ -32,7 +32,7 @@ if __name__ == '__main__':
     with open(STATS / 'plsa_ranking_top_15.txt', 'r') as fp:
         plsa_top_15_list = fp.readlines()
 
-    re_query_matrix = np.zeros((len(term_list), len(query_list)))
+    re_query_matrix = np.zeros((term_len, len(query_list)))
     for query_index, query in enumerate(query_list):
         q_term_loader = TermLoader(path=DATA / 'Query', file_name=query)
 

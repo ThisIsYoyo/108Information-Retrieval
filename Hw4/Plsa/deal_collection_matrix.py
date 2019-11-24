@@ -7,8 +7,8 @@ from sklearn.feature_extraction.text import CountVectorizer
 # Custom Var
 from util import ListLoader, TermLoader
 
-T = 128
-LOOP = 2
+T = 64
+LOOP = 60
 
 # Fixed var
 COLLECTION_PATH = Path(__file__).parent / 'Data' / 'Collection.txt'
@@ -19,30 +19,38 @@ STATS = Path(__file__).parent / 'Stats_Data'
 if __name__ == '__main__':
     start_time = time.time()
 
-    doc_list_loader = ListLoader(path=DATA, file_name='doc_list.txt')
-    doc_list = doc_list_loader.get_list()
+    # doc_list_loader = ListLoader(path=DATA, file_name='doc_list.txt')
+    # doc_list = doc_list_loader.get_list()
+    #
+    # doc_term_join_list = []
+    # for doc in doc_list:
+    #     term_list_loader = TermLoader(path=DATA / 'Document', file_name=doc)
+    #     term_list_loader.set_start_line(3)
+    #     term_list = list(term_list_loader.iter_term())
+    #
+    #     doc_term_join_list.append(' '.join(term_list))
+    #
+    # # deal collection
+    # cs = CountVectorizer(dtype=np.int)
+    # doc_term_freq_matrix = cs.fit_transform(doc_term_join_list)
+    # doc_term_freq_matrix = np.transpose(doc_term_freq_matrix)
+    #
+    # term_len, doc_len = doc_term_freq_matrix.shape
+    # term_list = cs.get_feature_names()
+    # all_doc_len = np.sum(doc_term_freq_matrix, axis=0)
+    #
+    # np.save(STATS / 'doc_term_freq_matrix.npy', doc_term_freq_matrix.toarray())
+    # with open(STATS / 'term_list.txt', 'w') as fp:
+    #     fp.writelines([f'{term}\n' for term in term_list])
+    #
+    # collection_line_list, cs = None, None
+    #
+    # coll_end_time = time.time()
+    # print(f'deal collection finish with {coll_end_time-start_time} secs')
 
-    doc_term_join_list = []
-    for doc in doc_list:
-        term_list_loader = TermLoader(path=DATA / 'Document', file_name=doc)
-        term_list_loader.set_start_line(3)
-        term_list = list(term_list_loader.iter_term())
-
-        doc_term_join_list.append(' '.join(term_list))
-
-    # deal collection
-    cs = CountVectorizer(dtype=np.int)
-    doc_term_freq_matrix = cs.fit_transform(doc_term_join_list)
-    doc_term_freq_matrix = np.transpose(doc_term_freq_matrix)
-
-    term_len, doc_len = doc_term_freq_matrix.shape
-    term_list = cs.get_feature_names()
+    doc_term_freq_matrix = np.load(STATS / 'doc_term_freq_matrix.npy')
     all_doc_len = np.sum(doc_term_freq_matrix, axis=0)
-
-    collection_line_list, cs = None, None
-
-    coll_end_time = time.time()
-    print(f'deal collection finish with {coll_end_time-start_time} secs')
+    term_len, doc_len = doc_term_freq_matrix.shape
 
     # initial random matrix
     p_w_given_T_tmp = np.random.rand(term_len, T)
@@ -53,7 +61,7 @@ if __name__ == '__main__':
     p_w_given_T_tmp, p_T_given_d_tmp = None, None
 
     initial_time = time.time()
-    print(f'initial random matrix finish with {initial_time - coll_end_time} secs')
+    print(f'initial random matrix finish with {initial_time - start_time} secs')
 
     # train EM model
     for l in range(LOOP):
@@ -72,20 +80,22 @@ if __name__ == '__main__':
             p_w_T, T_sum_given_w_col = None, None  # release memory
 
             # M step
-            weight_w_T = normal_p_w_T * doc_term_freq_matrix[:, j].reshape((term_len, 1)).toarray()
+            weight_w_T = normal_p_w_T * doc_term_freq_matrix[:, j].reshape((term_len, 1))
             weight_w_sum_T = np.sum(weight_w_T, axis=0)  # (T, 1)
             p_w_given_T_numerator += weight_w_T
             p_t_sum += weight_w_sum_T
 
-            new_p_T_given_d[:, j] = weight_w_sum_T / all_doc_len[0, j]
+            new_p_T_given_d[:, j] = weight_w_sum_T / all_doc_len[j]
 
             weight_w_T, weight_w_sum_T = None, None  # release memory
 
         p_w_given_T = p_w_given_T_numerator / p_t_sum
         p_T_given_d = new_p_T_given_d
 
+        np.save('p_w_given_T.npy', p_w_given_T)
+        np.save('p_T_given_d.npy', p_T_given_d)
         end_train_time = time.time()
-        print(f'{j} train finish with {end_train_time - start_train_time} secs')
+        print(f'{l} train finish with {end_train_time - start_train_time} secs')
 
 
 
