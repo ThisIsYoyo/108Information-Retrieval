@@ -114,23 +114,19 @@ if __name__ == '__main__':
         query_content, doc_content = read_query_and_doc(query_folder=TRAIN, query_name=query_name, doc_name=doc_name)
         doc_len = len(doc_content)
 
-        # add tokenizer 512 for each doc len
-        i = 0
-        while i < doc_len:
-            start = i
-            i = i + 512 if i + 512 <= doc_len else doc_len
+        # only train with first 512 bit of doc
+        doc_end = 512
+        if doc_len <= 512:
+            doc_end = doc_len
 
-            while doc_content[i - 1] != ' ' and i != doc_len:
-                i -= 1
+        x_input_ids = torch.tensor([tokenizer.encode(
+            f'[CLS]{query_content}[SEP]{doc_content[:doc_end]}[SEP]', add_special_tokens=True)]).to(device)
 
-            x_input_ids = torch.tensor([tokenizer.encode(
-                f'[CLS]{query_content}[SEP]{doc_content[start:i]}[SEP]', add_special_tokens=True)]).to(device)
-
-            model_out = model(x_input_ids)
-            output = MSEloss(model_out, PosAns)
-            output.backward()
-            optimizerSGD.step()
-            optimizerSGD.zero_grad()
+        model_out = model(x_input_ids)
+        output = MSEloss(model_out, PosAns)
+        output.backward()
+        optimizerSGD.step()
+        optimizerSGD.zero_grad()
 
         print(f'finish {(pos_lines.index(pos_line) + 1) / pos_len * 100} %')
 
@@ -149,23 +145,19 @@ if __name__ == '__main__':
         query_content, doc_content = read_query_and_doc(query_folder=TRAIN, query_name=query_name, doc_name=doc_name)
         doc_len = len(doc_content)
 
-        # add tokenizer 512 for each doc len
-        i = 0
-        while i < doc_len:
-            start = i
-            i = i + 512 if i + 512 <= doc_len else doc_len
+        # only train with first 512 bit of doc
+        doc_end = 512
+        if doc_len <= 512:
+            doc_end = doc_len
 
-            while doc_content[i - 1] != ' ' and i != doc_len:
-                i -= 1
+        x_input_ids = torch.tensor([tokenizer.encode(
+            f'[CLS]{query_content}[SEP]{doc_content[:doc_end]}[SEP]', add_special_tokens=True)]).to(device)
 
-            x_input_ids = torch.tensor([tokenizer.encode(
-                f'[CLS]{query_content}[SEP]{doc_content[start:i]}[SEP]', add_special_tokens=True)]).to(device)
-
-            model_out = model(x_input_ids)
-            output = MSEloss(model_out, NegAns)
-            output.backward()
-            optimizerSGD.step()
-            optimizerSGD.zero_grad()
+        model_out = model(x_input_ids)
+        output = MSEloss(model_out, NegAns)
+        output.backward()
+        optimizerSGD.step()
+        optimizerSGD.zero_grad()
 
         print(f'finish {(neg_lines.index(neg_line) + 1) / neg_len * 100} %')
 
@@ -192,22 +184,16 @@ if __name__ == '__main__':
             query_content, doc_content = read_query_and_doc(query_folder=TEST, query_name=query, doc_name=doc)
             doc_len = len(doc_content)
 
-            # add tokenizer 512 for each doc len
-            result_sum = 0
-            i = 0
-            while i < doc_len:
-                start = i
-                i = i + 512 if i + 512 <= doc_len else doc_len
-
-                while doc_content[i - 1] != ' ' and i != doc_len:
-                    i -= 1
+            # only train with first 512 bit of doc
+            doc_end = 512
+            if doc_len <= 512:
+                doc_end = doc_len
 
                 x_input_ids = torch.tensor([tokenizer.encode(
-                    f'[CLS]{query_content}[SEP]{doc_content[start:i]}[SEP]', add_special_tokens=True)]).to(device)
+                    f'[CLS]{query_content}[SEP]{doc_content[:doc_end]}[SEP]', add_special_tokens=True)]).to(device)
 
-                result_sum += model.forward(x_input_ids)
-
-            doc_scores_with_name.append((result_sum, doc))
+                doc_score_with_name = model.forward(x_input_ids), doc
+                doc_scores_with_name.append(doc_score_with_name)
 
         ranked_doc = [score_with_name[1] for score_with_name in sorted(doc_scores_with_name, reverse=True)]
 

@@ -1,4 +1,5 @@
 import abc
+from pathlib import Path
 
 
 class BaseLoader:
@@ -61,3 +62,18 @@ class TermLoader(BaseLoader):
         wanted_list = line_list[self.start_line:]
         for line in wanted_list:
             yield line.strip()
+
+
+class LineLoader(BaseLoader):
+
+    def read(self):
+        pass
+
+    def read_all_as_line(self):
+        with open(str(self.real_file_path), 'r') as fp:
+            lines = fp.readlines()
+
+        lines = [line.strip() for line in lines]
+        return ' '.join(lines)
+
+
